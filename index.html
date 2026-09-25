@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriAgent — Personalised Nutrition AI</title>
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, Arial, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+
+    /* ===== Header ===== */
+    header {
+      background: linear-gradient(135deg, #1a6b3c 0%, #2ecc71 100%);
+      color: #fff;
+      padding: 1.5rem 1rem 1.2rem;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    }
+    header .logo { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; }
+    header .logo span { color: #b8ffd9; }
+    header .tagline { font-size: 0.95rem; opacity: 0.9; margin-top: 0.3rem; }
+    header .model-badge {
+      display: inline-block;
+      margin-top: 0.6rem;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 20px;
+      padding: 0.15rem 0.8rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.03em;
+    }
+
+    /* ===== Layout ===== */
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    /* ===== Disclaimer Banner ===== */
+    .disclaimer-banner {
+      background: #fff8e1;
+      border: 1.5px solid #f59e0b;
+      border-radius: 10px;
+      padding: 0.85rem 1.2rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.83rem;
+      color: #78350f;
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+    }
+    .disclaimer-banner .icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.05rem; }
+
+    /* ===== Cards ===== */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      padding: 1.8rem 2rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-title {
+      font-size: 1.12rem;
+      font-weight: 700;
+      color: #1a6b3c;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 2px solid #e8f5e9;
+      padding-bottom: 0.6rem;
+    }
+    .card-title .icon { font-size: 1.3rem; }
+
+    /* ===== Form ===== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem 1.4rem;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    .form-group.full-width { grid-column: 1 / -1; }
+    label {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #374151;
+    }
+    label .required { color: #e53e3e; margin-left: 2px; }
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      padding: 0.6rem 0.85rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.93rem;
+      font-family: inherit;
+      color: #1a202c;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #fafafa;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #1a6b3c;
+      box-shadow: 0 0 0 3px rgba(26,107,60,0.12);
+      background: #fff;
+    }
+    textarea { resize: vertical; min-height: 70px; }
+
+    /* ===== Buttons ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.72rem 1.8rem;
+      border: none;
+      border-radius: 9px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.12s, box-shadow 0.2s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: #1a6b3c;
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(26,107,60,0.25);
+    }
+    .btn-primary:hover:not(:disabled) { background: #155c32; box-shadow: 0 4px 14px rgba(26,107,60,0.35); }
+    .btn-secondary {
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(37,99,235,0.22);
+    }
+    .btn-secondary:hover:not(:disabled) { background: #1d4ed8; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-sm { padding: 0.45rem 1rem; font-size: 0.86rem; }
+
+    /* ===== Nutrition Plan Output ===== */
+    #plan-output-section { display: none; }
+    #plan-output-section.visible { display: block; }
+
+    .plan-content {
+      background: #f7fdf9;
+      border: 1.5px solid #c6e6d0;
+      border-radius: 10px;
+      padding: 1.4rem 1.6rem;
+      font-size: 0.92rem;
+      line-height: 1.75;
+      max-height: 520px;
+      overflow-y: auto;
+    }
+
+    /* Markdown-rendered plan content */
+    .plan-content h1, .plan-content h2, .plan-content h3 {
+      color: #1a6b3c; margin: 1rem 0 0.4rem; font-weight: 700;
+    }
+    .plan-content h1 { font-size: 1.15rem; }
+    .plan-content h2 { font-size: 1.06rem; border-bottom: 1px solid #d4edda; padding-bottom: 0.2rem; }
+    .plan-content h3 { font-size: 0.98rem; }
+    .plan-content ul, .plan-content ol { padding-left: 1.4rem; margin: 0.3rem 0; }
+    .plan-content li { margin: 0.2rem 0; }
+    .plan-content p { margin: 0.5rem 0; }
+    .plan-content strong { color: #155c32; }
+    .plan-content hr { border: none; border-top: 1.5px solid #c6e6d0; margin: 1rem 0; }
+    .plan-content blockquote {
+      border-left: 3px solid #f59e0b;
+      background: #fff8e1;
+      padding: 0.6rem 1rem;
+      margin: 0.6rem 0;
+      border-radius: 0 6px 6px 0;
+      color: #78350f;
+      font-size: 0.85rem;
+    }
+
+    /* ===== Two-column layout for plan + chat ===== */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* ===== Chat Interface ===== */
+    .chat-window {
+      border: 1.5px solid #dbeafe;
+      border-radius: 10px;
+      height: 380px;
+      overflow-y: auto;
+      padding: 1rem;
+      background: #f8faff;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .chat-window:empty::after {
+      content: "👋  Hello! Ask me anything about nutrition, meal planning, or healthy eating.";
+      color: #6b7280;
+      font-size: 0.88rem;
+      font-style: italic;
+    }
+    .chat-msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 88%;
+    }
+    .chat-msg.user { align-self: flex-end; align-items: flex-end; }
+    .chat-msg.agent { align-self: flex-start; align-items: flex-start; }
+    .chat-bubble {
+      padding: 0.65rem 0.95rem;
+      border-radius: 14px;
+      font-size: 0.89rem;
+      line-height: 1.6;
+    }
+    .chat-msg.user .chat-bubble {
+      background: #1a6b3c;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-msg.agent .chat-bubble {
+      background: #fff;
+      border: 1.5px solid #d1d5db;
+      color: #1a202c;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-sender { font-size: 0.73rem; color: #6b7280; margin-bottom: 0.15rem; font-weight: 600; }
+    .chat-bubble strong { color: #155c32; }
+    .chat-bubble h1, .chat-bubble h2, .chat-bubble h3 { font-size: 0.92rem; color: #1a6b3c; margin: 0.4rem 0 0.2rem; }
+    .chat-bubble ul, .chat-bubble ol { padding-left: 1.2rem; margin: 0.2rem 0; }
+    .chat-bubble li { margin: 0.1rem 0; }
+    .chat-bubble blockquote {
+      border-left: 3px solid #f59e0b;
+      background: #fff8e1;
+      padding: 0.4rem 0.8rem;
+      margin: 0.4rem 0;
+      border-radius: 0 4px 4px 0;
+      color: #78350f;
+      font-size: 0.83rem;
+    }
+    .chat-input-row {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.8rem;
+      align-items: flex-end;
+    }
+    .chat-input-row textarea {
+      flex: 1;
+      min-height: 44px;
+      max-height: 120px;
+      padding: 0.55rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      resize: none;
+    }
+    .chat-input-row .btn { flex-shrink: 0; align-self: flex-end; }
+
+    /* ===== Spinner ===== */
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== Alerts ===== */
+    .alert {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      margin-top: 0.8rem;
+    }
+    .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .alert-info { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+
+    /* ===== Quick Query Chips ===== */
+    .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.9rem; }
+    .chip {
+      background: #e8f5e9;
+      color: #155c32;
+      border: 1.5px solid #c6e6d0;
+      border-radius: 20px;
+      padding: 0.25rem 0.85rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-weight: 600;
+    }
+    .chip:hover { background: #c8e6c9; }
+
+    /* ===== Footer ===== */
+    footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #6b7280;
+      padding: 1.5rem 1rem;
+      border-top: 1px solid #e5e7eb;
+      margin-top: 2rem;
+    }
+    footer a { color: #1a6b3c; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ===== Section labels ===== */
+    .section-label {
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: #9ca3af;
+      margin-bottom: 0.5rem;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 760px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .main-grid { grid-template-columns: 1fr; }
+      .card { padding: 1.3rem 1.1rem; }
+      header .logo { font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header>
+  <div class="logo">Nutri<span>Agent</span> 🥦</div>
+  <div class="tagline">Your Personalised AI Nutrition Assistant</div>
+  <div class="model-badge">Powered by Groq · qwen/qwen3.8-27b</div>
+</header>
+
+<div class="container">
+
+  <!-- ===== Medical Disclaimer Banner ===== -->
+  <div class="disclaimer-banner">
+    <span class="icon">⚠️</span>
+    <span>
+      <strong>Medical Disclaimer:</strong> NutriAgent provides general nutrition information for educational purposes only.
+      It is <strong>not</strong> a substitute for professional medical or dietetic advice, diagnosis, or treatment.
+      Always consult a qualified healthcare provider or registered dietitian before making significant dietary changes,
+      especially if you have a medical condition or are taking medication.
+    </span>
+  </div>
+
+  <!-- ===== User Profile Form ===== -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">👤</span> Your Profile — Generate a Personalised Nutrition Plan
+    </div>
+    <form id="profile-form" novalidate>
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label for="name">Full Name <span class="required">*</span></label>
+          <input type="text" id="name" name="name" placeholder="e.g. Priya Sharma" maxlength="80" required />
+        </div>
+
+        <div class="form-group">
+          <label for="age">Age (years) <span class="required">*</span></label>
+          <input type="number" id="age" name="age" placeholder="e.g. 32" min="1" max="120" required />
+        </div>
+
+        <div class="form-group">
+          <label for="diet">Diet Preference <span class="required">*</span></label>
+          <select id="diet" name="diet" required>
+            <option value="" disabled selected>Select diet type</option>
+            <option value="Vegetarian">Vegetarian</option>
+            <option value="Vegan">Vegan</option>
+            <option value="Non-Vegetarian">Non-Vegetarian</option>
+            <option value="Eggetarian">Eggetarian</option>
+            <option value="Pescatarian">Pescatarian</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="city">City</label>
+          <input type="text" id="city" name="city" placeholder="e.g. Mumbai" maxlength="80" />
+        </div>
+
+        <div class="form-group">
+          <label for="country">Country</label>
+          <input type="text" id="country" name="country" placeholder="e.g. India" maxlength="80" />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="medical">Medical History / Health Conditions</label>
+          <textarea id="medical" name="medical" placeholder="e.g. Type 2 Diabetes, Hypertension (High Blood Pressure). Leave blank if none." maxlength="500"></textarea>
+        </div>
+
+      </div><!-- /form-grid -->
+
+      <div id="form-error" class="alert alert-error" style="display:none;"></div>
+
+      <div style="margin-top:1.2rem; display:flex; gap:0.8rem; flex-wrap:wrap; align-items:center;">
+        <button type="submit" class="btn btn-primary" id="generate-btn">
+          🥗 Generate My Nutrition Plan
+        </button>
+        <button type="button" class="btn btn-sm" id="clear-form-btn"
+          style="background:#f3f4f6; color:#374151; border:1.5px solid #d1d5db;">
+          ✕ Clear Form
+        </button>
+      </div>
+    </form>
+  </div><!-- /card -->
+
+  <!-- ===== Main Grid: Plan + Chat ===== -->
+  <div class="main-grid">
+
+    <!-- ===== Nutrition Plan Output ===== -->
+    <div>
+      <div id="plan-output-section" class="card">
+        <div class="card-title">
+          <span class="icon">📋</span> Your Personalised Nutrition Plan
+        </div>
+        <div id="plan-loading" style="display:none; text-align:center; padding:2rem 0; color:#6b7280; font-size:0.92rem;">
+          <div class="spinner" style="border-color:rgba(26,107,60,0.3); border-top-color:#1a6b3c;"></div>
+          &nbsp; Crafting your personalised plan…
+        </div>
+        <div id="plan-content" class="plan-content"></div>
+        <div id="plan-error" class="alert alert-error" style="display:none; margin-top:0.6rem;"></div>
+      </div>
+      <!-- Placeholder when no plan generated yet -->
+      <div id="plan-placeholder" class="card" style="text-align:center; padding:2.5rem 1rem; color:#6b7280;">
+        <div style="font-size:3rem; margin-bottom:0.8rem;">🥗</div>
+        <div style="font-weight:600; font-size:1rem; color:#374151; margin-bottom:0.4rem;">Ready to create your plan</div>
+        <div style="font-size:0.88rem;">Fill in your profile above and click <strong>Generate My Nutrition Plan</strong></div>
+      </div>
+    </div>
+
+    <!-- ===== Agent Chat Interface ===== -->
+    <div class="card" style="display:flex; flex-direction:column;">
+      <div class="card-title">
+        <span class="icon">🤖</span> NutriAgent Assistant
+      </div>
+
+      <div class="section-label">Quick Questions</div>
+      <div class="chips" id="chips-container">
+        <span class="chip" data-query="What are some high-protein vegetarian foods?">🥜 High-protein veg foods</span>
+        <span class="chip" data-query="Suggest a healthy breakfast for someone with diabetes.">🍳 Diabetic breakfast</span>
+        <span class="chip" data-query="What are good fibre-rich foods I can eat daily?">🌾 Fibre-rich foods</span>
+        <span class="chip" data-query="Suggest healthy snacks for mid-morning.">🍎 Healthy snacks</span>
+        <span class="chip" data-query="What foods are good for managing high blood pressure?">❤️ Blood pressure diet</span>
+        <span class="chip" data-query="Can you suggest a simple non-vegetarian dinner recipe?">🍗 Dinner suggestion</span>
+      </div>
+
+      <div class="chat-window" id="chat-window"></div>
+
+      <div id="chat-error" class="alert alert-error" style="display:none; margin-top:0.4rem;"></div>
+
+      <div class="chat-input-row">
+        <textarea
+          id="chat-input"
+          placeholder="Ask me about nutrition, meal plans, healthy foods…"
+          rows="2"
+          maxlength="800"
+        ></textarea>
+        <button class="btn btn-secondary btn-sm" id="chat-send-btn">
+          Send ➤
+        </button>
+      </div>
+      <div style="font-size:0.76rem; color:#9ca3af; margin-top:0.4rem;">
+        NutriAgent can discuss nutrition topics only. For medical advice, consult a healthcare professional.
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+
+</div><!-- /container -->
+
+<footer>
+  NutriAgent &mdash; AI Nutrition Assistant &nbsp;|&nbsp;
+  Maharshi Mahesh Yogi Ramayan University &nbsp;|&nbsp;
+  <em>For informational purposes only &mdash; not medical advice.</em>
+</footer>
+
+<!-- ===== Scripts ===== -->
+<script>
+  // -----------------------------------------------------------------------
+  // Utilities
+  // -----------------------------------------------------------------------
+
+  /**
+   * Very lightweight Markdown → HTML converter.
+   * Handles: headings, bold, italic, bullet lists, horizontal rules,
+   * blockquotes, inline code, code blocks, and line breaks.
+   */
+  function markdownToHtml(md) {
+    if (!md) return "";
+    let html = md
+      // Escape HTML special characters in raw text (but we'll re-apply formatting)
+      // Code blocks first (to protect their content)
+      .replace(/```[\s\S]*?```/g, match => {
+        const code = match.replace(/^```[^\n]*\n?/, "").replace(/```$/, "");
+        return `<pre style="background:#f3f4f6;padding:0.7rem;border-radius:6px;overflow-x:auto;font-size:0.83rem;"><code>${escHtml(code)}</code></pre>`;
+      })
+      // Inline code
+      .replace(/`([^`]+)`/g, '<code style="background:#f3f4f6;padding:0.1em 0.4em;border-radius:3px;font-size:0.88em;">$1</code>')
+      // Headings
+      .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+      .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+      .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+      // Horizontal rule
+      .replace(/^---$/gm, "<hr>")
+      // Blockquote
+      .replace(/^> (.+)$/gm, "<blockquote>$1</blockquote>")
+      // Bold + italic
+      .replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>")
+      // Bold
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      // Italic
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
+      // Unordered list items
+      .replace(/^\s*[-*] (.+)$/gm, "<li>$1</li>")
+      // Wrap consecutive <li> items in <ul>
+      .replace(/(<li>[\s\S]*?<\/li>)(\n<li>[\s\S]*?<\/li>)*/g, match => `<ul>${match}</ul>`)
+      // Paragraphs: double newlines
+      .replace(/\n{2,}/g, "\n\n")
+      .split("\n\n")
+      .map(block => {
+        block = block.trim();
+        if (!block) return "";
+        // Already block-level elements
+        if (/^<(h[1-3]|ul|ol|hr|pre|blockquote)/.test(block)) return block;
+        return `<p>${block.replace(/\n/g, "<br>")}</p>`;
+      })
+      .join("\n");
+    return html;
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  // Collect current profile from the form (used for chat context)
+  function getProfile() {
+    return {
+      name:    document.getElementById("name").value.trim(),
+      age:     document.getElementById("age").value.trim(),
+      diet:    document.getElementById("diet").value,
+      medical: document.getElementById("medical").value.trim(),
+      city:    document.getElementById("city").value.trim(),
+      country: document.getElementById("country").value.trim(),
+    };
+  }
+
+  function showElement(id)  { document.getElementById(id).style.display = ""; }
+  function hideElement(id)  { document.getElementById(id).style.display = "none"; }
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.style.display = "";
+  }
+  function clearError(id) {
+    document.getElementById(id).style.display = "none";
+    document.getElementById(id).textContent = "";
+  }
+
+  // -----------------------------------------------------------------------
+  // Nutrition Plan Generation
+  // -----------------------------------------------------------------------
+  const profileForm   = document.getElementById("profile-form");
+  const generateBtn   = document.getElementById("generate-btn");
+  const planSection   = document.getElementById("plan-output-section");
+  const planPlaceholder = document.getElementById("plan-placeholder");
+  const planContent   = document.getElementById("plan-content");
+  const planLoading   = document.getElementById("plan-loading");
+  const clearFormBtn  = document.getElementById("clear-form-btn");
+
+  profileForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearError("form-error");
+    clearError("plan-error");
+
+    const name    = document.getElementById("name").value.trim();
+    const age     = document.getElementById("age").value.trim();
+    const diet    = document.getElementById("diet").value;
+    const medical = document.getElementById("medical").value.trim();
+    const city    = document.getElementById("city").value.trim();
+    const country = document.getElementById("country").value.trim();
+
+    // Frontend validation
+    if (!name) { showError("form-error", "Please enter your name."); return; }
+    if (!age || isNaN(age) || age < 1 || age > 120) { showError("form-error", "Please enter a valid age (1–120)."); return; }
+    if (!diet) { showError("form-error", "Please select your diet preference."); return; }
+
+    // Show plan section, show loading
+    planPlaceholder.style.display = "none";
+    planSection.classList.add("visible");
+    planContent.innerHTML = "";
+    showElement("plan-loading");
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<span class="spinner"></span> Generating…';
+
+    try {
+      const response = await fetch("/generate_plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, age: Number(age), diet, medical, city, country }),
+      });
+      const data = await response.json();
+      hideElement("plan-loading");
+
+      if (data.status === "success") {
+        planContent.innerHTML = markdownToHtml(data.plan);
+        // Scroll plan into view on mobile
+        planSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        planContent.innerHTML = "";
+        showError("plan-error", data.message || "Failed to generate nutrition plan. Please try again.");
+      }
+    } catch (err) {
+      hideElement("plan-loading");
+      showError("plan-error", "Network error: unable to reach the server. Please ensure the backend is running.");
+    } finally {
+      generateBtn.disabled = false;
+      generateBtn.innerHTML = "🥗 Generate My Nutrition Plan";
+    }
+  });
+
+  clearFormBtn.addEventListener("click", () => {
+    profileForm.reset();
+    clearError("form-error");
+  });
+
+  // -----------------------------------------------------------------------
+  // Agent Chat
+  // -----------------------------------------------------------------------
+  const chatWindow  = document.getElementById("chat-window");
+  const chatInput   = document.getElementById("chat-input");
+  const chatSendBtn = document.getElementById("chat-send-btn");
+
+  function appendMessage(role, content) {
+    const msgEl = document.createElement("div");
+    msgEl.className = `chat-msg ${role}`;
+
+    const senderEl = document.createElement("div");
+    senderEl.className = "chat-sender";
+    senderEl.textContent = role === "user" ? "You" : "NutriAgent";
+
+    const bubbleEl = document.createElement("div");
+    bubbleEl.className = "chat-bubble";
+
+    if (role === "agent") {
+      bubbleEl.innerHTML = markdownToHtml(content);
+    } else {
+      bubbleEl.textContent = content;
+    }
+
+    msgEl.appendChild(senderEl);
+    msgEl.appendChild(bubbleEl);
+    chatWindow.appendChild(msgEl);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+
+  function appendTypingIndicator() {
+    const id = "typing-" + Date.now();
+    const msgEl = document.createElement("div");
+    msgEl.className = "chat-msg agent";
+    msgEl.id = id;
+
+    const senderEl = document.createElement("div");
+    senderEl.className = "chat-sender";
+    senderEl.textContent = "NutriAgent";
+
+    const bubbleEl = document.createElement("div");
+    bubbleEl.className = "chat-bubble";
+    bubbleEl.innerHTML = '<span style="color:#9ca3af;font-size:0.88em;">Thinking<span id="dots">…</span></span>';
+
+    msgEl.appendChild(senderEl);
+    msgEl.appendChild(bubbleEl);
+    chatWindow.appendChild(msgEl);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    return id;
+  }
+
+  function removeTypingIndicator(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+
+  async function sendChatMessage(userText) {
+    if (!userText.trim()) return;
+    clearError("chat-error");
+
+    appendMessage("user", userText);
+    chatInput.value = "";
+    chatSendBtn.disabled = true;
+    chatSendBtn.textContent = "…";
+
+    const typingId = appendTypingIndicator();
+
+    try {
+      const response = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userText,
+          profile: getProfile(),
+        }),
+      });
+      const data = await response.json();
+      removeTypingIndicator(typingId);
+
+      if (data.status === "success") {
+        appendMessage("agent", data.reply);
+      } else {
+        showError("chat-error", data.message || "Failed to get a response. Please try again.");
+      }
+    } catch (err) {
+      removeTypingIndicator(typingId);
+      showError("chat-error", "Network error: unable to reach the server.");
+    } finally {
+      chatSendBtn.disabled = false;
+      chatSendBtn.textContent = "Send ➤";
+    }
+  }
+
+  // Send on button click
+  chatSendBtn.addEventListener("click", () => {
+    sendChatMessage(chatInput.value.trim());
+  });
+
+  // Send on Enter (Shift+Enter = newline)
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage(chatInput.value.trim());
+    }
+  });
+
+  // Quick query chips
+  document.getElementById("chips-container").addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (chip) {
+      const query = chip.dataset.query;
+      chatInput.value = query;
+      sendChatMessage(query);
+    }
+  });
+
+  // Auto-resize chat textarea
+  chatInput.addEventListener("input", () => {
+    chatInput.style.height = "auto";
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + "px";
+  });
+</script>
+
+</body>
+</html>

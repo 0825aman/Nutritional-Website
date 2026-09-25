@@ -1,0 +1,66 @@
+﻿# ============================================================
+# NutriAgent --- .gitignore
+# ============================================================
+
+# --- Environment and Secrets (NEVER commit these) ---
+.env
+*.env
+.env.local
+.env.production
+.env.staging
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.class
+*.pyo
+*.pyd
+.Python
+
+# --- Virtual Environments ---
+venv/
+env/
+ENV/
+.venv/
+virtualenv/
+
+# --- Distribution / Packaging ---
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+
+# --- Testing and Coverage ---
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+
+# --- IDE and Editor Files ---
+.vscode/
+.idea/
+*.suo
+*.swp
+*.swo
+*~
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Flask ---
+instance/
+.webassets-cache
+flask_session/
+
+# --- Byte-compiled ---
+*.pyc
